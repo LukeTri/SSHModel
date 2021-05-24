@@ -35,6 +35,7 @@ def Hamiltonian(v, w, n):
     Eigaper = np.linalg.eig(Haper)[0]
     Eigper = np.linalg.eig(Hper)[0]
 
+    print(Eigaper)
     plt.figure(1)
     plt.subplot(121)
     plt.plot(x, y, color='green', linestyle='dashed', linewidth=3,
@@ -42,7 +43,11 @@ def Hamiltonian(v, w, n):
 
     plt.plot(x, y2, color='green', linestyle='dashed', linewidth=3,
              marker='o', markerfacecolor='blue', markersize=5)
-
+    x = np.linspace(-math.pi, math.pi)
+    plt.plot(x,0*x + Eigaper.max(), color = 'orange')
+    plt.plot(x, 0*x + np.array([j for j in Eigaper if j > 0]).min(),color = 'red')
+    plt.plot(x, 0 * x + np.array([j for j in Eigaper if j < 0]).max(), color='pink')
+    plt.plot(x,0*x + Eigaper.min(), color = 'purple')
 
     plt.ylim(-2, 2)
     plt.xlim(-math.pi, math.pi)
@@ -70,6 +75,6 @@ def Hamiltonian(v, w, n):
 
 
 if __name__ == '__main__':
-    Hamiltonian(0.125, .25,4)
+    Hamiltonian(0.5, .25,10)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
