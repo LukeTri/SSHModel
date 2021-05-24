@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 import matplotlib as mpl
 mpl.use('TkAgg')
@@ -20,6 +21,19 @@ def Hamiltonian(v, w, n):
         dx.append(v + w * math.cos(k))
         dy.append(w*math.sin(k))
 
+    Hper = np.zeros((2*n,2*n))
+    for i in range(0, n):
+        Hper[2*i][2*i+1] = v
+        Hper[2*i+1][2*i] = v
+    for i in range(0, n-1):
+        Hper[2*i+1][2*i+2] = w
+        Hper[2*i+2][2*i+1] = w
+    Haper = Hper.copy()
+    Hper[0][2*n-1] = w
+    Hper[2*n-1][0] = w
+
+    Eigaper = np.linalg.eig(Haper)[0]
+    Eigper = np.linalg.eig(Hper)[0]
 
     plt.figure(1)
     plt.subplot(121)
@@ -28,6 +42,7 @@ def Hamiltonian(v, w, n):
 
     plt.plot(x, y2, color='green', linestyle='dashed', linewidth=3,
              marker='o', markerfacecolor='blue', markersize=5)
+
 
     plt.ylim(-2, 2)
     plt.xlim(-math.pi, math.pi)
@@ -55,6 +70,6 @@ def Hamiltonian(v, w, n):
 
 
 if __name__ == '__main__':
-    Hamiltonian(.5, .5,4)
+    Hamiltonian(0.125, .25,4)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
