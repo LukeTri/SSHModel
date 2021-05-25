@@ -35,19 +35,18 @@ def Hamiltonian(v, w, n):
     Eigaper = np.linalg.eig(Haper)[0]
     Eigper = np.linalg.eig(Hper)[0]
 
-    print(Eigaper)
+
+
     plt.figure(1)
-    plt.subplot(121)
-    plt.plot(x, y, color='green', linestyle='dashed', linewidth=3,
+    plt.subplot(131)
+    plt.plot(x, y, color='green', linewidth=1,
              marker='o', markerfacecolor='blue', markersize=5)
 
-    plt.plot(x, y2, color='green', linestyle='dashed', linewidth=3,
+    plt.plot(x, y2, color='green', linewidth=1,
              marker='o', markerfacecolor='blue', markersize=5)
-    x = np.linspace(-math.pi, math.pi)
-    plt.plot(x,0*x + Eigaper.max(), color = 'orange')
-    plt.plot(x, 0*x + np.array([j for j in Eigaper if j > 0]).min(),color = 'red')
-    plt.plot(x, 0 * x + np.array([j for j in Eigaper if j < 0]).max(), color='pink')
-    plt.plot(x,0*x + Eigaper.min(), color = 'purple')
+
+
+
 
     plt.ylim(-2, 2)
     plt.xlim(-math.pi, math.pi)
@@ -57,12 +56,48 @@ def Hamiltonian(v, w, n):
 
     plt.xlabel('k')
     plt.ylabel('Energy')
-    plt.title('Dispersion Relations')
+    plt.title('Momentum-Space Hamiltonian')
 
-    plt.subplot(122)
+    plt.subplot(132)
+    Eigper = np.sort(Eigper)
+    Eigper = np.round(Eigper,2)
+    Eigper = np.unique(Eigper)
 
-    plt.plot(dx, dy, color='green', linestyle='dashed', linewidth=3,
+    arr1 = Eigper[0:len(Eigper) / 2]
+    arr2 = Eigper[len(Eigper)/2:]
+
+    farr1 = np.flip(arr1)
+    farr1 = farr1[0:len(farr1) - 1]
+
+    farr2 = np.flip(arr2)
+    farr2 = farr2[1:len(farr2)]
+
+
+    arr1 = np.append(farr1, arr1)
+    arr2 = np.append(arr2, farr2)
+
+    plt.plot(x, y, color='green', linewidth=1,
              marker='o', markerfacecolor='blue', markersize=5)
+
+    plt.plot(x, y2, color='green', linewidth=1,
+             marker='o', markerfacecolor='blue', markersize=5)
+
+    plt.ylim(-2, 2)
+    plt.xlim(-math.pi, math.pi)
+    plt.xticks([-math.pi,0,math.pi])
+    plt.axhline(0)
+    plt.axvline(0)
+
+
+    plt.xlabel('k')
+    plt.ylabel('Energy')
+    plt.title('Standard Hamiltonian')
+
+
+    plt.subplot(133)
+
+    plt.plot(dx, dy, color='blue', linewidth=1,
+             marker='o', markerfacecolor='black', markersize=5)
 
     plt.ylim(-1, 1)
     plt.xlim(-1, 1)
@@ -75,6 +110,4 @@ def Hamiltonian(v, w, n):
 
 
 if __name__ == '__main__':
-    Hamiltonian(0.5, .25,10)
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    Hamiltonian(0.125, .25,6)
