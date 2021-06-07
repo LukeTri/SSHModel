@@ -1,0 +1,22 @@
+import numpy as np
+import math
+import cmath
+import matplotlib.pyplot as plt
+
+def Hamiltonian(N = 30, v = 1.5,w = 1):
+    
+    eig = np.zeros((2*N,2*N))
+    for kx in range(1,2*N+1):
+        for ky in range(1,2*N+1):
+            H = -v*cmath.exp(-1j*((2*math.pi)/N)*(ky))-w*cmath.exp(-1j*((2*math.pi)/N)*(-kx*(math.sqrt(3)/2)-ky/2))-w*cmath.exp(-1j*((2*math.pi)/N)*(kx*(math.sqrt(3)/2)-ky/2))
+            eig[kx-1][ky-1] = cmath.polar(H)[0]
+            
+                                                                                                                                
+                                                                                                                                
+    plt.imshow(eig,cmap='hot',interpolation='nearest')
+    plt.show()
+                                                                                                                                
+            
+            
+    
+Hamiltonian(30,1,1)
