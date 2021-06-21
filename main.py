@@ -1,113 +1,116 @@
-import math
-import numpy as np
+# This is a sample Python script.
 
-import matplotlib as mpl
-mpl.use('TkAgg')
+# Press ⌃R to execute it or replace it with your code.
+# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+import numpy as np
+import math
+
 import matplotlib.pyplot as plt
 
 
-def Hamiltonian(v, w, n):
-    x = []
-    y = []
-    y2 = []
-    dx = []
-    dy = []
-    for i in range(0, n+1):
-        k=2 * math.pi * i / n - math.pi
-        x.append(k)
-        z = math.sqrt(v*v + w*w + 2*v*w*math.cos(k))
-        y.append(z)
-        y2.append(-z)
-        dx.append(v + w * math.cos(k))
-        dy.append(w*math.sin(k))
+def aperHamiltonian(N, v, w,u,t,o):
+    aH = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
+    for i in range(0, 2 * N * N):
+        if i % 2 == 0:
+            aH[i][i] = o
+            aH[i + 1][i + 1] = -o
+            aH[i][i + 1] = v
+            aH[i + 1][i] = v
+            if i / (2 * N) != 0:
+                aH[i][i - 2 * N + 1] = w
+                aH[i - 2 * N + 1][i] = w
 
-    Hper = np.zeros((2*n,2*n))
-    for i in range(0, n):
-        Hper[2*i][2*i+1] = v
-        Hper[2*i+1][2*i] = v
-    for i in range(0, n-1):
-        Hper[2*i+1][2*i+2] = w
-        Hper[2*i+2][2*i+1] = w
-    Haper = Hper.copy()
-    Hper[0][2*n-1] = w
-    Hper[2*n-1][0] = w
+                if (i - 2 * N + 3) % (2 * N) != 1:
+                    aH[i][i - 2 * N + 3] = u
+                    aH[i - 2 * N + 3][i] = u
 
-    Eigaper = np.linalg.eig(Haper)[0]
-    Eigper = np.linalg.eig(Hper)[0]
+            if (i + 2) % (2 * N) != 0:
+                aH[i][i + 2] = t
+                aH[i + 2][i] = t
 
+                aH[i + 1][i + 3] = t
+                aH[i + 3][i + 1] = t
+            if i % (2 * N) != 0:
+                aH[i][i - 2] = t
+                aH[i - 2][i] = t
 
+                aH[i + 1][i - 1] = t
+                aH[i - 1][i + 1] = t
+            if i / (2 * N) != 0:
+                aH[i][i - 2 * N] = t
+                aH[i - 2 * N][i] = t
 
-    plt.figure(1)
-    plt.subplot(131)
-    plt.plot(x, y, color='green', linewidth=1,
-             marker='o', markerfacecolor='blue', markersize=5)
+                aH[i + 1][i - 2 * N + 1] = t
+                aH[i - 2 * N + 1][i + 1] = t
+                if (i - 2 * N + 2) % (2 * N) != 1:
+                    aH[i][i - 2 * N + 2] = t
+                    aH[i - 2 * N + 2][i] = t
 
-    plt.plot(x, y2, color='green', linewidth=1,
-             marker='o', markerfacecolor='blue', markersize=5)
+                    aH[i + 1][i - 2 * N + 3] = t
+                    aH[i - 2 * N + 3][i + 1] = t
+            if math.floor(i / (2 * N)) != N - 1:
+                aH[i][i + 2 * N] = t
+                aH[i + 2 * N][i] = t
 
+                aH[i + 1][i + 2 * N + 1] = t
+                aH[i + 2 * N + 1][i + 1] = t
+                if i % (2 * N) != 0:
+                    aH[i][i + 2 * N - 2] = t
+                    aH[i + 2 * N - 2][i] = t
 
+                    aH[i + 1][i + 2 * N - 1] = t
+                    aH[i + 2 * N - 1][i + 1] = t
+    return np.linalg.eigh(aH)
 
+def IPP(N, H):
+    # creates position operators X,Y
+    X = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
+    Y = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
+    for i in range(0, N):
+        for j in range(0, N):
+            X[2 * N * i + 2 * j][2 * N * i + 2 * j] = j
+            Y[2 * N * i + 2 * j][2 * N * i + 2 * j] = i
 
-    plt.ylim(-2, 2)
-    plt.xlim(-math.pi, math.pi)
-    plt.xticks([-math.pi,0,math.pi])
-    plt.axhline(0)
-    plt.axvline(0)
+            X[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = j
+            Y[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = i
 
-    plt.xlabel('k')
-    plt.ylabel('Energy')
-    plt.title('Momentum-Space Hamiltonian')
+    # finds eigenvectors/values of P * X * P
+    P = H @ H.conj().T
+    m1 = np.matmul(np.matmul(P, X), P)
+    linalg = np.linalg.eigh(m1)
+    val = linalg[0]
+    vec = linalg[1]
 
-    plt.subplot(132)
-    Eigper = np.sort(Eigper)
-    Eigper = np.round(Eigper,2)
-    Eigper = np.unique(Eigper)
-
-    arr1 = Eigper[0:len(Eigper) / 2]
-    arr2 = Eigper[len(Eigper)/2:]
-
-    farr1 = np.flip(arr1)
-    farr1 = farr1[0:len(farr1) - 1]
-
-    farr2 = np.flip(arr2)
-    farr2 = farr2[1:len(farr2)]
-
-
-    arr1 = np.append(farr1, arr1)
-    arr2 = np.append(arr2, farr2)
-
-    plt.plot(x, y, color='green', linewidth=1,
-             marker='o', markerfacecolor='blue', markersize=5)
-
-    plt.plot(x, y2, color='green', linewidth=1,
-             marker='o', markerfacecolor='blue', markersize=5)
-
-    plt.ylim(-2, 2)
-    plt.xlim(-math.pi, math.pi)
-    plt.xticks([-math.pi,0,math.pi])
-    plt.axhline(0)
-    plt.axvline(0)
-
-
-    plt.xlabel('k')
-    plt.ylabel('Energy')
-    plt.title('Standard Hamiltonian')
-
-
-    plt.subplot(133)
-
-    plt.plot(dx, dy, color='blue', linewidth=1,
-             marker='o', markerfacecolor='black', markersize=5)
-
-    plt.ylim(-1, 1)
-    plt.xlim(-1, 1)
-    plt.xlabel('d_x')
-    plt.ylabel('d_y')
-    plt.axhline(0)
-    plt.axvline(0)
-
+    plt.plot(val[N*N:], 'o')
     plt.show()
+    components = list(range(0, N))
+    # breaks eigenvectors into groups
+    groups = {}
+    c = 0
+    prindex = 0
+    for i in range(0, len(val)):
+        if c != len(components) - 1:
+            if (val[i] - components[c]) ** 2 > (val[i] - components[c + 1]) ** 2:
+                groups[c] = vec[:,prindex:i]
+                prindex = i
+                c = c + 1
+    groups[c] = vec[:,prindex:]
+
+    # finds P_j * Y * P_j
+    for i in range(0, len(components)):
+        pj = np.zeros((2*N*N, 2*N*N))
+        arr = groups.get(i)
+        for j in range(0, arr.shape[1]):
+            pj = pj + np.outer(arr[:,j], arr[:,j])
+        mfinal = np.matmul(np.matmul(pj, Y), pj)
+        plt.plot(np.linalg.eigh(mfinal)[1][:,-1])
+        plt.show()
+        assert False
 
 
 if __name__ == '__main__':
-    Hamiltonian(0.125, .25,6)
+    temp = aperHamiltonian(5,1,1,1,.1,1)[1]
+    temp = temp[:,:temp.shape[1]//2]
+    IPP(5, temp)
+
+# See PyCharm help at https://www.jetbrains.com/help/pycharm/
