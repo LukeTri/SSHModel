@@ -62,6 +62,7 @@ def aperHamiltonian(N, v, w,u,t,o):
                     aH[i + 2 * N - 1][i + 1] = t
     return np.linalg.eigh(aH)
 
+
 def IPP(N, H):
     # creates position operators X,Y
     X = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
@@ -82,7 +83,7 @@ def IPP(N, H):
     vec = linalg[1]
 
     plt.plot(val[N*N:], 'o')
-    plt.show()
+    # plt.show()
     components = list(range(0, N))
     # breaks eigenvectors into groups
     groups = {}
@@ -103,14 +104,28 @@ def IPP(N, H):
         for j in range(0, arr.shape[1]):
             pj = pj + np.outer(arr[:,j], arr[:,j])
         mfinal = np.matmul(np.matmul(pj, Y), pj)
-        plt.plot(np.linalg.eigh(mfinal)[1][:,-1])
+        eigs = np.linalg.eigh(mfinal)[1][:,-1]
+        x = np.linspace(0,N-1,N)
+        y = np.linspace(0,N-1,N)
+        X,Y = np.meshgrid(x,y)
+        Z = np.zeros((N,N))
+        for n in range(0,N):
+            for m in range(0,N):
+                Z[n][m] = eigs[int(2*n*N + 2*m)]**2 + eigs[int(2*i*n + 2*m + 1)]**2
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax.contour3D(X, Y, Z, 50, cmap='binary')
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+        ax.view_init(60, 35)
         plt.show()
         assert False
 
 
 if __name__ == '__main__':
-    temp = aperHamiltonian(5,1,1,1,.1,1)[1]
+    temp = aperHamiltonian(20,1,1,1,.1,1)[1]
     temp = temp[:,:temp.shape[1]//2]
-    IPP(5, temp)
+    IPP(20, temp)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
