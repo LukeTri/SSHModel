@@ -7,6 +7,47 @@ import math
 
 import matplotlib.pyplot as plt
 
+def LargeHamiltonian(N, v, w,u,t,o):
+    aH = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
+    for n in range(0,N):
+        for m in range(0,N):
+            if n == m:
+                if n%2 == 0:
+                    aH[n][n] = o
+                if n%2 == 1:
+                    aH[n][n] = -o
+
+            #NN pairs
+            aH[2*N*n + 2*m][2*N*n + 2*m+1] = v
+            aH[2 * N * n + 2 * m + 1][2 * N * n + 2 * m] = v
+
+            aH[2*N*n + 2*m][2*N*((n-1)%N) + 2*m + 1] = w
+            aH[2 * N * ((n - 1) % N) + 2 * m + 1][2 * N * n + 2 * m] = w
+
+            aH[2 * N * n + 2 * m][2 * N * ((n - 1) % N) + 2 * ((m+1)%N) + 1] = u
+            aH[2 * N * ((n - 1) % N) + 2 * ((m + 1) % N) + 1][2 * N * n + 2 * m] = u
+
+            #NNN same row
+            aH[2*N*n + 2*m][2*N*n + 2*((m+1)%N)] = t
+            aH[2 * N * n + 2 * m +1][2 * N * n + 2 * ((m + 1) % N)+1] = t
+
+            aH[2 * N * n + 2 * m][2 * N * n + 2 * ((m - 1) % N)] = t
+            aH[2 * N * n + 2 * m + 1][2 * N * n + 2 * ((m - 1) % N) + 1] = t
+
+            #NNN above row
+            aH[2 * N * n + 2 * m][2 * N * ((n - 1) % N) + 2 * m] = t
+            aH[2 * N * n + 2 * m+1][2 * N * ((n - 1) % N) + 2 * m+1] = t
+
+            aH[2 * N * n + 2 * m][2 * N * ((n-1)%N) + 2 * ((m + 1) % N)] = t
+            aH[2 * N * n + 2 * m+1][2 * N * ((n - 1) % N) + 2 * ((m + 1) % N)+1] = t
+
+            #NNN below row
+            aH[2 * N * n + 2 * m][2 * N * ((n + 1) % N) + 2 * m] = t
+            aH[2 * N * n + 2 * m + 1][2 * N * ((n + 1) % N) + 2 * m + 1] = t
+
+            aH[2 * N * n + 2 * m][2 * N * ((n + 1) % N) + 2 * ((m - 1) % N)] = t
+            aH[2 * N * n + 2 * m + 1][2 * N * ((n + 1) % N) + 2 * ((m - 1) % N) + 1] = t
+    return np.linalg.eigh(aH)
 
 def aperHamiltonian(N, v, w,u,t,o):
     aH = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
@@ -69,11 +110,11 @@ def IPP(N, H):
     Y = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
     for i in range(0, N):
         for j in range(0, N):
-            X[2 * N * i + 2 * j][2 * N * i + 2 * j] = j
-            Y[2 * N * i + 2 * j][2 * N * i + 2 * j] = i
+            X[2 * N * i + 2 * j][2 * N * i + 2 * j] = N/2 - j
+            Y[2 * N * i + 2 * j][2 * N * i + 2 * j] = N/2 - i
 
-            X[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = j
-            Y[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = i
+            X[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = N/2 - j
+            Y[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = N/2 - i
 
     # finds eigenvectors/values of P * X * P
     P = H @ H.conj().T
@@ -105,6 +146,8 @@ def IPP(N, H):
             pj = pj + np.outer(arr[:,j], arr[:,j])
         mfinal = np.matmul(np.matmul(pj, Y), pj)
         eigs = np.linalg.eigh(mfinal)[1][:,-1]
+
+    # plots eigenvectors in 2-d graph
         x = np.linspace(0,N-1,N)
         y = np.linspace(0,N-1,N)
         X,Y = np.meshgrid(x,y)
@@ -114,7 +157,9 @@ def IPP(N, H):
                 Z[n][m] = eigs[int(2*n*N + 2*m)]**2 + eigs[int(2*i*n + 2*m + 1)]**2
         fig = plt.figure()
         ax = plt.axes(projection='3d')
-        ax.contour3D(X, Y, Z, 50, cmap='binary')
+        ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                        cmap='viridis', edgecolor='none')
+        ax.set_title('surface')
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_zlabel('z')
@@ -122,10 +167,41 @@ def IPP(N, H):
         plt.show()
         assert False
 
+def ChernMarker(N, L, H):
+    X = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
+    Y = np.zeros((2 * N * N, 2 * N * N), dtype='complex')
+    for i in range(0, N):
+        for j in range(0, N):
+            X[2 * N * i + 2 * j][2 * N * i + 2 * j] = j
+            Y[2 * N * i + 2 * j][2 * N * i + 2 * j] = i
+
+            X[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = j
+            Y[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = i
+
+    XL = np.zeros((2*N*N, 2*N*N),dtype='complex')
+
+
+    for i in range(0,N):
+        for j in range(0,N):
+            if N/2 - L < i <= N/2 + L and N / 2 - L < j <= N / 2 + L:
+                XL[2 * N * i + 2 * j][2 * N * i + 2 * j] = 1
+                XL[2 * N * i + 2 * j + 1][2 * N * i + 2 * j + 1] = 1
+    P = H @ H.conj().T
+
+    matr = 1j * XL @ ((P @ X @ P) @ (P @ Y @ P) - (P @ Y @ P) @ (P @ X @ P)) @ XL
+    return np.trace(matr) * math.pi / (2*L*L)
+
+
+
 
 if __name__ == '__main__':
-    temp = aperHamiltonian(20,1,1,1,.1,1)[1]
+    temp = LargeHamiltonian(20,1,1,1,1,1)
+    plt.plot(temp[0],'o')
+    plt.show()
     temp = temp[:,:temp.shape[1]//2]
+
+    for i in range(1,14):
+        print(ChernMarker(20, 8, temp))
     IPP(20, temp)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
