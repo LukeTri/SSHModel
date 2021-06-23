@@ -38,22 +38,46 @@ def Berry(N,v,w,u,t):
     for kx in range(1,N+1):
         for ky in range(1,N+1):
             
-            vec = np.linalg.eig(matr[kx-1][ky-1])[1][:,np.argmax(np.linalg.eig(matr[kx-1][ky-1])[0])]
+            vec = np.linalg.eigh(matr[kx-1][ky-1])[1][:,np.argmax(np.linalg.eigh(matr[kx-1][ky-1])[0])]
             #vec = vec/vec[0]
+            #vec = vec*np.exp(1j*(1.6))
             #vec = np.array([1,matr[kx-1][ky-1][0][1]/cmath.polar(matr[kx-1][ky-1][0][1])[0]])
-        
+            
             for n in range(0,N):
                 for m in range(0,N):
-                    
-                    dat[kx-1][ky-1][(2*n)*N+2*m] = cmath.exp(((2*math.pi)/N)*(kx*n+ky*m))*vec[0]
-                    dat[kx-1][ky-1][(2*n)*N+2*m+1] = cmath.exp(((2*math.pi)/N)*(kx*n+ky*m))*vec[1]
-            dat[kx-1][ky-1] = dat[kx-1][ky-1]/np.linalg.norm(dat[kx-1][ky-1])
+                    dat[kx-1][ky-1][(2*n)*N+2*m] = np.exp(((2j*math.pi)/N)*(kx*(n*math.sqrt(3))+ky*(n*math.sqrt(3)/2+3/2*m)))*vec[0]
+                    dat[kx-1][ky-1][(2*n)*N+2*m+1] = np.exp(((2j*math.pi)/N)*(kx*(n*math.sqrt(3))+ky*(n*math.sqrt(3)/2+3/2*m)))*vec[1]
+            dat[kx-1][ky-1] = dat[kx-1][ky-1]
+
     sumterm = 0
+    fail = 0
     for n in range(0,N):
         for m in range(0,N):
-        
-            sumterm = sumterm-cmath.polar(np.vdot(dat[n][m],dat[(n+1)% N][m])*np.vdot(dat[(n+1)% N][m],dat[(n+1)% N][(m+1)% N])*np.vdot(dat[(n+1)% N][(m+1)% N],dat[n][(m+1)%N])*np.vdot(dat[n][(m+1)%N],dat[n][m]))[1]
-    print(sumterm/(2*math.pi))
+            vec1 = dat[n][m]
+            vec2 = dat[(n+1)%N][m]
+            vec3 = dat[(n+1)%N][(m+1)%N]
+            vec4 = dat[n][(m+1)%N]
+            
+            
+            dot1 = cmath.polar(np.vdot(vec1,vec2))[0]
+            dot2 = cmath.polar(np.vdot(vec2,vec3))[0]
+            dot3 = cmath.polar(np.vdot(vec3,vec4))[0]
+            dot4 = cmath.polar(np.vdot(vec4,vec1))[0]
+            
+            thing = cmath.polar(np.vdot(vec1,vec2)*np.vdot(vec2,vec3)*np.vdot(vec3,vec4)*np.vdot(vec4,vec1))
+            #print(dot2)
+            #print(np.linalg.eigh(matr[(n+1)%N][m])[0][0],"*",np.linalg.eigh(matr[(n+1)%N][(m+1)%N])[0][0])
+            
+            
+            
+            if(thing[0] > 1e-14):
+                sumterm = sumterm-thing[1]
+            else:
+                fail = fail+1
+            
+    print("Chern Number of:",sumterm/(2*math.pi),", failed ",fail," times.")
+    
+    return dat
 
 
-Berry(31,2,7,1,0.0)
+Berry(10,1,2,7,0)
