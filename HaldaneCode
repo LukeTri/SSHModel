@@ -2,17 +2,20 @@ import numpy as np
 import math
 import cmath
 import matplotlib.pyplot as plt
+import mayavi.mlab as mylab
 
-def Hamiltonian(N = 30, v = 1.0,w = 1.0,show = False,u=1.0,t=1.0):
+def Hamiltonian(N = 30, v = 1.0,w = 1.0,show = False,u=1.0,t=1.0,onsite = 0.0):
     
     eig = np.zeros((N,N))
     matr = np.zeros((N,N,2,2),dtype = 'complex')
     for kx in range(1,N+1):
         for ky in range(1,N+1):
-            H = -v*cmath.exp(-1j*((2*math.pi)/N)*(ky))-w*cmath.exp(-1j*((2*math.pi)/N)*(-kx*(math.sqrt(3)/2)-ky/2))-u*cmath.exp(-1j*((2*math.pi)/N)*(kx*(math.sqrt(3)/2)-ky/2))
-            z = -2*t*(math.sin((2*math.pi)/N*math.sqrt(3)*kx)+math.sin((2*math.pi)/N*(-kx*(math.sqrt(3)/2)-ky*3/2))+math.sin((2*math.pi)/N*(-kx*(math.sqrt(3)/2)+ky*3/2)))
+            H = -v*np.exp(-1j*((2*np.pi)/N)*(ky))\
+                -w*np.exp(-1j*((2*np.pi)/N)*(-kx*(np.sqrt(3)/2)-ky/2))\
+                -u*np.exp(-1j*((2*np.pi)/N)*(kx*(np.sqrt(3)/2)-ky/2))
+            z = onsite-2*t*(math.sin((2*math.pi)/N*math.sqrt(3)*kx)+math.sin((2*math.pi)/N*(-kx*(math.sqrt(3)/2)-ky*3/2))+math.sin((2*math.pi)/N*(-kx*(math.sqrt(3)/2)+ky*3/2)))
             matr[kx-1][ky-1] = np.array([[z,H],[np.conj(H),-z]])
-            eig[kx-1][ky-1] = cmath.polar(np.linalg.eig(matr[kx-1][ky-1])[0][0]-np.linalg.eig(matr[kx-1][ky-1])[0][1])[0]
+            eig[kx-1][ky-1] = np.abs(np.linalg.eigvalsh(matr[kx-1][ky-1])[0])
             
                                                                                                                                 
     if show:
@@ -26,43 +29,133 @@ def Hamiltonian(N = 30, v = 1.0,w = 1.0,show = False,u=1.0,t=1.0):
             
             
     
-out = Hamiltonian(100,2,5,True,1,10.0)
+out = Hamiltonian(100,1,2,True,5,0)
 
 
-def Berry(N,v,w,u,t):
-    matr = Hamiltonian(N,v,w,True,u,t)
+@mylab.animate
+def anim(ms,xtrans,ytrans,ztrans):
+    for j in range(50):
+        for i in range(100):
+            ms.trait_set(x = xtrans[i], y = ytrans[i], z = ztrans[i])
+            yield
+        for i in range(100):
+            ms.trait_set(x = xtrans[100-i-1], y = ytrans[100-i-1], z = ztrans[100-i-1])
+            yield
+            
+
+def Berry(N,v,w,u,t,show_figs = False,onsite = 0.0):
+    matr = Hamiltonian(N,v,w,show_figs,u,t,onsite = onsite)
     pos = np.zeros((N,N,2))
     
     dat = np.zeros((N,N,2*N*N),dtype = 'complex')
     
+    BasicLattice = np.zeros((5*N*N+(2*N+1)*N,3))
+    colormap = np.zeros((5*N*N+(2*N+1)*N))
+    image = np.zeros((3*N*N+N,3))
+    brillouin = np.zeros((3*N*N+N,3))
+    
     for kx in range(1,N+1):
         for ky in range(1,N+1):
             
+            if show_figs:
+            
+                image[3*((kx-1)*N+(ky-1))+(kx-1)] = (matr[kx-1][ky-1][0][1].real,-matr[kx-1][ky-1][0][1].imag,matr[kx-1][ky-1][0][0].real)
+                image[3*((kx-1)*N+(ky-1))+1+(kx-1)] = (matr[kx%N][ky-1][0][1].real,-matr[kx%N][ky-1][0][1].imag,matr[kx%N][ky-1][0][0].real)
+                image[3*((kx-1)*N+(ky-1))+2+(kx-1)] = (matr[kx-1][ky-1][0][1].real,-matr[kx-1][ky-1][0][1].imag,matr[kx-1][ky-1][0][0].real)
+
+                R = max(v,w,u,t)
+                r = R*(3/4)
+
+                xang = (2*math.pi/N)*(kx-1)
+                yang = (2*math.pi/N)*(ky-1)
+
+                Apoint = ((R+(r)*math.cos(xang))*math.cos(yang),\
+                         (R+(r)*math.cos(xang))*math.sin(yang),\
+                        (r)*math.sin(xang))
+
+                xang = (2*math.pi/N)*(kx%N)
+                yang = (2*math.pi/N)*(ky-1)
+
+                Bpoint = ((R+(r)*math.cos(xang))*math.cos(yang),\
+                         (R+(r)*math.cos(xang))*math.sin(yang),\
+                        (r)*math.sin(xang))
+
+                brillouin[3*((kx-1)*N+(ky-1))+(kx-1)] = Apoint
+                brillouin[3*((kx-1)*N+(ky-1))+1+(kx-1)] = Bpoint
+                brillouin[3*((kx-1)*N+(ky-1))+2+(kx-1)] = Apoint
+            
             vec = np.linalg.eigh(matr[kx-1][ky-1])[1][:,np.argmax(np.linalg.eigh(matr[kx-1][ky-1])[0])]
-            #vec = vec/vec[0]
-            #vec = vec*np.exp(1j*(1.6))
-            #vec = np.array([1,matr[kx-1][ky-1][0][1]/cmath.polar(matr[kx-1][ky-1][0][1])[0]])
             
             for n in range(0,N):
                 for m in range(0,N):
                     dat[kx-1][ky-1][(2*n)*N+2*m] = np.exp(((2j*math.pi)/N)*(kx*(n*math.sqrt(3))+ky*(n*math.sqrt(3)/2+3/2*m)))*vec[0]
                     dat[kx-1][ky-1][(2*n)*N+2*m+1] = np.exp(((2j*math.pi)/N)*(kx*(n*math.sqrt(3))+ky*(n*math.sqrt(3)/2+3/2*m)))*vec[1]
             dat[kx-1][ky-1] = dat[kx-1][ky-1]
+            
+        if show_figs:
+            brillouin[3*((kx-1)*N+(N-1))+3+(kx-1)] = brillouin[3*((kx-1)*N)+(kx-1)]
+            image[3*((kx-1)*N+(N-1))+3+(kx-1)] = image[3*((kx-1)*N)+(kx-1)]
 
     sumterm = 0
     fail = 0
+    
+    
     for n in range(0,N):
         for m in range(0,N):
+            
+            if show_figs:
+                xang = (2*math.pi/N)*(n+m/2)
+                yang = (2*math.pi/N)*m
+
+                Apoint = ((2+(1.5)*math.cos(xang))*math.cos(yang),\
+                         (2+(1.5)*math.cos(xang))*math.sin(yang),\
+                        (1.5)*math.sin(xang))
+
+                xang = (2*math.pi/N)*(n+m/2)
+                yang = (2*math.pi/N)*(m+2/3)
+
+                Bpoint = ((2+(1.5)*math.cos(xang))*math.cos(yang),\
+                         (2+(1.5)*math.cos(xang))*math.sin(yang),\
+                        (1.5)*math.sin(xang))
+
+                xang = (2*math.pi/N)*(n+1+(m-1)/2)
+                yang = (2*math.pi/N)*(m-1/3)
+
+                RBpoint = ((2+(1.5)*math.cos(xang))*math.cos(yang),\
+                         (2+(1.5)*math.cos(xang))*math.sin(yang),\
+                        (1.5)*math.sin(xang))
+
+                xang = (2*math.pi/N)*(n+(m+1)/2)
+                yang = (2*math.pi/N)*(m+1)
+
+                RApoint = ((2+(1.5)*math.cos(xang))*math.cos(yang),\
+                         (2+(1.5)*math.cos(xang))*math.sin(yang),\
+                        (1.5)*math.sin(xang))
+
+                BasicLattice[5*(N*n+m)+(2*N+1)*n] = Apoint
+                BasicLattice[5*(N*n+m)+1+(2*N+1)*n] = RBpoint
+                BasicLattice[5*(N*n+m)+2+(2*N+1)*n] = Apoint
+                BasicLattice[5*(N*n+m)+3+(2*N+1)*n] = Bpoint
+                BasicLattice[5*(N*n+m)+4+(2*N+1)*n] = RApoint
+
+
+                colormap[5*(N*n+m)+(2*N+1)*n] = 0.0
+                colormap[5*(N*n+m)+1+(2*N+1)*n] = 1.0
+                colormap[5*(N*n+m)+2+(2*N+1)*n] = 0.0
+                colormap[5*(N*n+m)+3+(2*N+1)*n] = 1.0
+                colormap[5*(N*n+m)+4+(2*N+1)*n] = 0.0
+
+            
+            
+#             dot1 = cmath.polar(np.vdot(vec1,vec2))[0]
+#             dot2 = cmath.polar(np.vdot(vec2,vec3))[0]
+#             dot3 = cmath.polar(np.vdot(vec3,vec4))[0]
+#             dot4 = cmath.polar(np.vdot(vec4,vec1))[0]
+
             vec1 = dat[n][m]
             vec2 = dat[(n+1)%N][m]
             vec3 = dat[(n+1)%N][(m+1)%N]
             vec4 = dat[n][(m+1)%N]
-            
-            
-            dot1 = cmath.polar(np.vdot(vec1,vec2))[0]
-            dot2 = cmath.polar(np.vdot(vec2,vec3))[0]
-            dot3 = cmath.polar(np.vdot(vec3,vec4))[0]
-            dot4 = cmath.polar(np.vdot(vec4,vec1))[0]
             
             thing = cmath.polar(np.vdot(vec1,vec2)*np.vdot(vec2,vec3)*np.vdot(vec3,vec4)*np.vdot(vec4,vec1))
             #print(dot2)
@@ -74,10 +167,38 @@ def Berry(N,v,w,u,t):
                 sumterm = sumterm-thing[1]
             else:
                 fail = fail+1
+        if show_figs:
+            for mnot in range(1,N+1):
+
+                BasicLattice[5*(N*n+N-1)+3+(2*N+1)*n+2*mnot] = BasicLattice[5*(N*n+N-mnot)+(2*N+1)*n+3]
+                BasicLattice[5*(N*n+N-1)+3+(2*N+1)*n+2*mnot+1] = BasicLattice[5*(N*n+N-mnot)+(2*N+1)*n]
+
+                colormap[5*(N*n+N-1)+3+(2*N+1)*n+2*mnot] = 1.0
+                colormap[5*(N*n+N-1)+3+(2*N+1)*n+2*mnot+1] = 0.0
+
+            BasicLattice[5*(N*n+N-1)+3+(2*N+1)*n+2*N+2] = BasicLattice[5*(N*n)+(2*N+1)*n+1]
+            colormap[5*(N*n+N-1)+3+(2*N+1)*n+2*N+2] = 1.0
             
     print("Chern Number of:",sumterm/(2*math.pi),", failed ",fail," times.")
     
-    return dat
+    if show_figs:
+        fig1 = mylab.figure(1)
+        fig2 = mylab.figure(2)
+        mylab.plot3d(BasicLattice[:,0], BasicLattice[:,1], BasicLattice[:,2],colormap,colormap = 'blue-red',representation = 'surface',figure = fig1)
+    #     mylab.plot3d(image[:,0], image[:,1], image[:,2],representation = 'wireframe',figure = fig2)
+        bril = mylab.plot3d(brillouin[:,0], brillouin[:,1], brillouin[:,2],representation = 'wireframe',figure = fig2)
+        ms = bril.mlab_source
+    #     mylab.show()
+
+        xtrans = np.linspace(brillouin[:,0],image[:,0],100)
+        ytrans = np.linspace(brillouin[:,1],image[:,1],100)
+        ztrans = np.linspace(brillouin[:,2],image[:,2],100)
+
+        anim(ms,xtrans,ytrans,ztrans)
+        mylab.show()
 
 
-Berry(10,1,2,7,0)
+        
+
+Berry(30,1,1,1,1,show_figs = True, onsite = 2)
+
